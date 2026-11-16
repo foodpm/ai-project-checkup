@@ -1,6 +1,6 @@
 # AI Project Security Baseline: Attack Surface Checklist
 
-> Check IDs: AS-01 to AS-21
+> Check IDs: AS-01 to AS-24
 >
 > Idea source: the Jike post "A retrospective of 21 attack techniques" <https://m.okjike.com/originalPosts/6aec2ba5b8cb8d00dd8d4e7a?s=ewoidSI6ICI1OTE3YTE3Y2M5ZjUzNDAwMTE1YzQzNGUiCn0=>. This document rewrites those techniques as generic checks and removes all project names, domains, accounts, keys, and internal network details.
 
@@ -184,6 +184,27 @@ Run the full pass quarterly and after any major release. Allowed verdicts: Pass 
 - **Control** — Admin cookies `SameSite=Strict` + `HttpOnly`. Require a CSRF token or a confirmation dialog for all writes (a native `confirm` blocks most automation). Isolate admin from front-end sessions (separate cookie name/domain).
 - **Evidence** — Admin cookie attribute screenshot, CSRF check location for writes, and the session isolation method.
 
+### AS-22 Registration / code brute force that takes the database down
+
+- **Vector** — One IP hammers the registration endpoint, brute-forcing email verification codes. Even when every request fails, the sheer volume overloads the database and takes down normal users' send-code / password-reset endpoints (real case: a single IP sent 6300 registration requests in 14 minutes, D1 returned "DB is overloaded", normal users got errors at the same time; 0 accounts succeeded but the service was unusable). Every failure also writes an error-log row — the attacker is effectively burning your database write quota for free.
+- **Self-check** — ① Do register / send-code / reset endpoints limit **failures** (limiting successful registrations alone is useless)? ② Is the failure-count query **before every failure path** (once over the limit, later requests cost 1 query and stop writing error logs)? ③ Any single-IP high-frequency failure patterns in historical error logs?
+- **Control** — Layered rate limiting: a DB failure-counter table (same IP, ≥10 failures in 15 min → 429) as the primary, globally precise line; platform-native limiter bindings (e.g. Workers `RATE_LIMITER`) only as a best-effort first gate — per-PoP counting, simple config only supports 10s/60s periods, and on some accounts it never blocks at all, so it must not be the only defense. Clean the failure table via cron (see CF doc section 11). Enable human verification (Turnstile etc.) where possible.
+- **Evidence** — Rate-limit code location (which failure paths the check precedes), a 429 screenshot after a single-IP burst, and the cleanup cron config for the failure table.
+
+### AS-23 Email-sending endpoint abuse
+
+- **Vector** — Rotate email addresses and hammer the send-code / send-reset-code endpoints: burn email quota, damage sender reputation, or use your API as a mail-bombing relay.
+- **Self-check** — Beyond the "30s cooldown per email", is there any volume cap? Any per-IP send accounting? Does the verification-code table record the source IP?
+- **Control** — Three layers: ≤30 sends per IP per day + ≤5 per email per hour + 30s per-email cooldown. Index the quota queries (`(ip, created_at)`, `(email, created_at)`) or every send becomes a full table scan. Count failed sends toward the limit too.
+- **Evidence** — Quota code location, the ip column and indexes on the verification-code table, and a 429 response after a single IP exceeds the cap.
+
+### AS-24 Flood of unauthenticated telemetry endpoints
+
+- **Vector** — Enumerate public write endpoints (page-view, dwell-time, event analytics), then script-write into them to burn database write-row quota.
+- **Self-check** — ① List every public writable `/api/*` endpoint; ② does each have per-IP rate control; ③ is payload length capped (against large-payload flooding)?
+- **Control** — Rate-limit every public write endpoint (in-memory per-IP, e.g. 60/min; reject without writing when over). Best-effort is fine — the goal is only to cap unbounded writes at a constant level. Back it up with usage alerts (see CF doc CF-01).
+- **Evidence** — Inventory of public write endpoints, the rate-control code location for each, and a measured over-limit response.
+
 ---
 
 ## 10-minute pre-launch checklist
@@ -200,6 +221,9 @@ Run the full pass quarterly and after any major release. Allowed verdicts: Pass 
 - [ ] No `dangerouslySetInnerHTML`/`innerHTML`-class sinks; admin external links sanitized (AS-09, AS-10)
 - [ ] Third-party script inventory minimized; no unmaintained self-hosted edge services (AS-16, AS-18)
 - [ ] Admin accounts use 2FA; admin cookies are `SameSite=Strict` + `HttpOnly` (AS-17, AS-21)
+- [ ] Register/send-code/reset endpoints limit failures (check placed first); a single-IP burst measured to return 429 (AS-22)
+- [ ] Send-code/reset-code have per-IP daily and per-email hourly caps; the code table records source IP with indexes (AS-23)
+- [ ] Every public write endpoint (telemetry/reporting) has per-IP rate control (AS-24)
 
 ## Three design-time rules
 

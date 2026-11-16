@@ -164,3 +164,15 @@ curl -s "https://<your-domain>/api/usage-check" | head -c 400
 - [ ] **CF-V2** A threshold ≤ 0 triggers an early return (no API call).
 - [ ] **CF-V3** Returns only the verdict, with no notification side effects.
 - [ ] **CF-V4** All high-frequency SQL is indexed, DDL bumps versions, and "not updated" is distinguished from "$0".
+
+## 11. Bill self-protection under attack (2026-11 retrospective)
+
+A single IP sent 6300 registration requests in 14 minutes: D1 went into overload (normal users' endpoints returned "DB is overloaded" at the same time) and the error-log table got 6300 rows of junk. The codes held — 0 accounts succeeded — but the cost surface was exposed. Takeaways:
+
+- **Rate-limit checks must come first**: put the failure-count query at the very top of the handler (before JSON parsing, before `ensureSchema`). Once over the limit, each attack request costs exactly 1 D1 query. Placed after the failure paths, the attacker has already burned the full read+write chain for free.
+- **Error-log writes are the hidden cost**: 6300 failures ≈ 6300 error_logs rows. Once rate limiting kicks in this drops to zero, but design new endpoints knowing that "recording failures" is itself a consumption entry point for attackers.
+- **Counter/quota tables need cron cleanup**: failure tables (e.g. login_attempts) and verification-code tables grow unbounded otherwise, making quota count queries slower and slower. Delete by window + buffer (rate-limit window 15 min → purge records older than 1 hour; codes expire in 5 min with a 24h quota window → keep 2 days).
+- **Workers native `RATE_LIMITER` binding is best-effort only**: free and 0 D1, but ① the simple config only supports 10s/60s periods — you cannot express a "15-minute failure budget"; ② it counts per PoP, so distributed attacks scale with the number of colos; ③ on some accounts `limit()` always returns success and never blocks (measured). Deploy it as the first gate, but keep the DB failure-counter layer as the real defense.
+- **Unauthenticated telemetry endpoints need rate control**: analytics/event-reporting endpoints with no auth and no rate control let a flood blow up D1 write rows. In-memory rate control (per IP 60/min, reject without writing) caps the writes at a constant level.
+- **Free credits are the farming motive**: credits granted on uninvited registration × a per-IP registration limit (e.g. 5 accounts/hour/IP) = mass-producible free AI quota. Keep new-user credit minimal, or grant it only for invited signups.
+- **Testing pitfalls**: ① macOS curl alternates between IPv4/IPv6, so IP-keyed rate-limit verification gets split across two IPs and never triggers — use `curl -4`; ② `wrangler tail` may connect but deliver zero events — for live diagnosis, a temporary echo field in the response is more reliable; ③ after a major wrangler upgrade, deploy uploads can time out repeatedly — rolling back the version restores it.
