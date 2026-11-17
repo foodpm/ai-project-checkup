@@ -2,7 +2,7 @@
 
 **中文** | [English](README.en.md)
 
-> 一套给 AI 开发项目用的上线前检查清单与方法论。六项体检：攻击面、SQL 注入、后端性能、海外合规、边缘平台用量、域名历史。
+> 一套给 AI 开发项目用的上线前检查清单与方法论。六项体检：攻击面、SQL 注入、后端性能、海外合规、边缘平台用量、域名历史；另有第 7 项 **SEO 体检（可选）**，仅网站项目需要。
 
 上线前花 30 分钟，比上线后花 3 天救火便宜。
 
@@ -19,7 +19,7 @@
   - [方式三：手动手检](#方式三手动手检)
 - [体检结果怎么记录](#体检结果怎么记录)
 - [目录结构](#目录结构)
-- [六项检查怎么配合](#六项检查怎么配合)
+- [各项检查怎么配合](#各项检查怎么配合)
 - [致谢](#致谢)
 - [免责声明](#免责声明)
 - [License](#license)
@@ -56,6 +56,7 @@ AI 编码工具能把功能做得很快，但它默认不会替你考虑这些�
 | [海外网站合规清单](docs/zh/overseas-compliance.md) | CO-01 – CO-06、CO-P0/P1/P2 | 年龄验证、字体、会话重放、邮件退订、自动续订、DMCA | X 帖子（见[致谢](#致谢)） |
 | [边缘平台用量检查](docs/zh/cloudflare-usage.md) | CF-01 – CF-03、CF-V1 – CF-V4 | 请求量突增、日累计、昨日账单；D1 按扫描行计费的坑 | — |
 | [域名历史体检](docs/zh/domain-history.md) | DH-01 – DH-03 | 接手二手域名前用 Wayback Machine 查「前世」：快照时间线、可疑内容扫描、前身站点识别 | — |
+| [SEO 体检（可选）](docs/zh/seo-checklist.md) | SEO-01 – SEO-33 | **仅网站项目需要**：收录与结构诊断、页面优化、作弊信号与健康度审查、惩罚检测、效果监测与优先级 | 《SEO实战密码》（见[致谢](#致谢)） |
 
 英文版在 [docs/en/](docs/en/)，编号与结构完全对应。
 
@@ -71,14 +72,18 @@ AI 编码工具能把功能做得很快，但它默认不会替你考虑这些�
 仓库地址：https://github.com/foodpm/ai-project-checkup
 
 工作步骤：
-1. 先读取仓库根目录 README，以及 docs/zh/ 下六篇文档：
+1. 先读取仓库根目录 README，以及 docs/zh/ 下的文档：
    attack-surface.md、sql-injection.md、backend-performance.md、
-   overseas-compliance.md、cloudflare-usage.md、domain-history.md。
+   overseas-compliance.md、cloudflare-usage.md、domain-history.md；
+   网站项目另加读 seo-checklist.md（可选检查）。
 2. 先给项目画像：技术栈、是否有前端/后端/数据库/支付/邮件/用户上传/
    第三方脚本，判断哪些文档适用、哪些不适用。
+   如果是网站项目（官网/博客/电商/内容站等，需要搜索引擎自然流量），
+   加读 docs/zh/seo-checklist.md 并检查 SEO-01…SEO-33；
+   纯后台/API/内网工具则将 SEO 整篇标记为不适用。
 3. 逐条检查有编号的项（AS-01…AS-24、SQ-01…SQ-10、BP-01…BP-13、
-   CO-01…CO-06、CF-01…CF-03、DH-01…DH-03）。每条只给一个结论：
-   通过 / 不通过 / 待核验 / 不适用。
+   CO-01…CO-06、CF-01…CF-03、DH-01…DH-03，网站项目加 SEO-01…SEO-33）。
+   每条只给一个结论：通过 / 不通过 / 待核验 / 不适用。
 4. 结论必须有证据：能指到 文件:行号、配置项或命令输出；
    确认不了的写「待核验」，不要猜。
 5. 先不要改代码。输出一份体检报告，按优先级排序：
@@ -103,6 +108,8 @@ AI 编码工具能把功能做得很快，但它默认不会替你考虑这些�
 3. 性能文档里与本次改动直接相关的 BP 条目。
 每条给：通过 / 不通过 / 待核验 / 不适用 + 证据（文件:行号）+ 最小修复。
 不要改代码，只出报告。
+如果是网站项目，另加：SEO 文档（docs/zh/seo-checklist.md）的
+SEO-01 至 SEO-13 及 SEO-29；不是网站项目则跳过。
 ```
 
 ### 方式三：手动手检
@@ -140,17 +147,19 @@ ai-project-checkup/
     │   ├── backend-performance.md
     │   ├── overseas-compliance.md
     │   ├── cloudflare-usage.md
-    │   └── domain-history.md
+    │   ├── domain-history.md
+    │   └── seo-checklist.md          # 可选，仅网站项目
     └── en/
         ├── attack-surface.md
         ├── sql-injection.md
         ├── backend-performance.md
         ├── overseas-compliance.md
         ├── cloudflare-usage.md
-        └── domain-history.md
+        ├── domain-history.md
+        └── seo-checklist.md          # Optional, website projects only
 ```
 
-## 六项检查怎么配合
+## 各项检查怎么配合
 
 | 阶段 | 用哪些文档 | 目的 |
 |---|---|---|
@@ -158,12 +167,14 @@ ai-project-checkup/
 | 动手写之前 | 后端性能、SQL 注入 | 把索引、参数化、快照做进设计，避免返工 |
 | 功能完成、上线前 | 攻击面、SQL 注入、海外合规 | 过安全与合规门禁，P0 清零 |
 | 上线后第一周 | 边缘平台用量、性能 | 确认没有异常用量、慢查询、账单刺客 |
-| 每季度 | 全部六篇 | 全量复审，更新证据与结论 |
+| 网站项目上线前/改版后 | SEO 体检（可选） | 收录、结构、页面优化达标；已有排名的站加查作弊信号与惩罚检测 |
+| 每季度 | 全部七篇 | 全量复审，更新证据与结论 |
 
 ## 致谢
 
 - 攻击面清单的思路来自即刻帖子：<https://m.okjike.com/originalPosts/6aec2ba5b8cb8d00dd8d4e7a?s=ewoidSI6ICI1OTE3YTE3Y2M5ZjUzNDAwMTE1YzQzNGUiCn0=>
 - 海外合规清单的思路来自 X 帖子：<https://x.com/liangzhu_ai/status/2113894763221176515?a=_PQxdz11i6zyXb8fjTg&s=46>
+- SEO 体检提炼自《SEO实战密码》（昝辉/Zac 著，电子工业出版社出版）第 3～5、7、8、10、13 章，已改写为通用检查清单。
 - 其余文档未标注外部来源，为通用工程实践整理，不虚构出处。
 
 ## 免责声明

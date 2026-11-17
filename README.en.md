@@ -2,7 +2,7 @@
 
 [中文](README.md) | **English**
 
-> A pre-launch checklist and methodology collection for AI-built projects. Six checkups: attack surface, SQL injection, backend performance, overseas compliance, edge-platform usage, and domain history.
+> A pre-launch checklist and methodology collection for AI-built projects. Six checkups: attack surface, SQL injection, backend performance, overseas compliance, edge-platform usage, and domain history; plus a 7th, **SEO checkup (optional)** — website projects only.
 
 Thirty minutes before launch is cheaper than three days of firefighting after.
 
@@ -19,7 +19,7 @@ Thirty minutes before launch is cheaper than three days of firefighting after.
   - [Option 3: manual check](#option-3-manual-check)
 - [How to record results](#how-to-record-results)
 - [Repository layout](#repository-layout)
-- [How the six checkups fit together](#how-the-six-checkups-fit-together)
+- [How the checkups fit together](#how-the-checkups-fit-together)
 - [Acknowledgements](#acknowledgements)
 - [Disclaimer](#disclaimer)
 - [License](#license)
@@ -56,6 +56,7 @@ The common shape: **invisible during development, visible after launch as an inc
 | [Overseas Compliance Checklist](docs/en/overseas-compliance.md) | CO-01 – CO-06, CO-P0/P1/P2 | Age verification, fonts, session replay, email unsubscribe, auto-renewal, DMCA | X post (see [Acknowledgements](#acknowledgements)) |
 | [Edge Platform Usage Check](docs/en/cloudflare-usage.md) | CF-01 – CF-03, CF-V1 – CF-V4 | Request spikes, daily totals, yesterday's bill; D1 billing by rows scanned | — |
 | [Domain History Checkup](docs/en/domain-history.md) | DH-01 – DH-03 | Investigate a second-hand domain's past with the Wayback Machine before handover: snapshot timeline, suspicious content scan, previous-site identification | — |
+| [SEO Checkup (optional)](docs/en/seo-checklist.md) | SEO-01 – SEO-33 | **Website projects only**: indexing and structure diagnosis, page optimization, manipulation signals and health review, penalty detection, monitoring and prioritization | *SEO Praxis* book (see [Acknowledgements](#acknowledgements)) |
 
 Chinese originals live in [docs/zh/](docs/zh/). IDs and structure map one-to-one.
 
@@ -71,14 +72,19 @@ You are my "AI Project Inspector". Run a pre-launch checkup on the project I cur
 Repository: https://github.com/foodpm/ai-project-checkup
 
 Steps:
-1. Read the repository README and the six documents under docs/en/:
+1. Read the repository README and the documents under docs/en/:
    attack-surface.md, sql-injection.md, backend-performance.md,
-   overseas-compliance.md, cloudflare-usage.md, domain-history.md.
+   overseas-compliance.md, cloudflare-usage.md, domain-history.md;
+   website projects additionally read seo-checklist.md (optional check).
 2. First profile the project: stack, presence of frontend/backend/database/
    payments/email/user uploads/third-party scripts. Decide which documents
-   apply and which do not.
+   apply and which do not. If this is a website project (marketing site/
+   blog/e-commerce/content site that wants organic search traffic), also
+   read docs/en/seo-checklist.md and check SEO-01…SEO-33; for pure
+   backends/APIs/internal tools, mark the whole SEO document Not applicable.
 3. Check every numbered item (AS-01…AS-21, SQ-01…SQ-10, BP-01…BP-13,
-   CO-01…CO-06, CF-01…CF-03, DH-01…DH-03). Give exactly one verdict per item:
+   CO-01…CO-06, CF-01…CF-03, DH-01…DH-03; website projects add
+   SEO-01…SEO-33). Give exactly one verdict per item:
    Pass / Fail / Pending verification / Not applicable.
 4. Every verdict needs evidence: file:line, a config key, or command output.
    If you cannot confirm it, write "Pending verification" — do not guess.
@@ -105,6 +111,8 @@ run a minimal pre-launch checkup on my current project. Check only three things:
 3. The BP items directly related to this change in the performance document.
 For each item: Pass / Fail / Pending verification / Not applicable,
 plus evidence (file:line) and the minimal fix. Do not change code; report only.
+If this is a website project, also check SEO-01 through SEO-13 and SEO-29
+in the SEO document (docs/en/seo-checklist.md); otherwise skip it.
 ```
 
 ### Option 3: manual check
@@ -142,17 +150,19 @@ ai-project-checkup/
     │   ├── backend-performance.md
     │   ├── overseas-compliance.md
     │   ├── cloudflare-usage.md
-    │   └── domain-history.md
+    │   ├── domain-history.md
+    │   └── seo-checklist.md          # Optional, website projects only
     └── en/
         ├── attack-surface.md
         ├── sql-injection.md
         ├── backend-performance.md
         ├── overseas-compliance.md
         ├── cloudflare-usage.md
-        └── domain-history.md
+        ├── domain-history.md
+        └── seo-checklist.md          # Optional, website projects only
 ```
 
-## How the six checkups fit together
+## How the checkups fit together
 
 | Stage | Documents | Purpose |
 |---|---|---|
@@ -160,12 +170,14 @@ ai-project-checkup/
 | Before writing code | Backend performance, SQL injection | Design in indexes, parameterization, and snapshots to avoid rework |
 | Feature-complete, pre-launch | Attack surface, SQL injection, overseas compliance | Clear the security and compliance gate; P0 must be zero |
 | First week after launch | Edge platform usage, performance | Confirm no usage anomaly, slow query, or bill shock |
-| Every quarter | All six | Full review; refresh evidence and verdicts |
+| Website project pre-launch / post-redesign | SEO checkup (optional) | Indexing, structure, and page optimization pass; ranked sites add manipulation-signal and penalty checks |
+| Every quarter | All seven | Full review; refresh evidence and verdicts |
 
 ## Acknowledgements
 
 - The attack surface checklist is inspired by this Jike post: <https://m.okjike.com/originalPosts/6aec2ba5b8cb8d00dd8d4e7a?s=ewoidSI6ICI1OTE3YTE3Y2M5ZjUzNDAwMTE1YzQzNGUiCn0=>
 - The overseas compliance checklist is inspired by this X post: <https://x.com/liangzhu_ai/status/2113894763221176515?a=_PQxdz11i6zyXb8fjTg&s=46>
+- The SEO checkup is distilled from *SEO 实战密码 (SEO Praxis)* by Zac (昝辉), chapters 3–5, 7, 8, 10, 13, rewritten as a generic checklist.
 - The remaining documents cite no external source; they are consolidated general engineering practice, and no attribution is invented.
 
 ## Disclaimer
